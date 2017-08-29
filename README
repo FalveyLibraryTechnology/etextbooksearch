@@ -1,0 +1,24 @@
+# etextbooksearch
+
+> Lovingly forked and heavily based upon [https://github.com/myqua/etextbooksearch](https://github.com/myqua/etextbooksearch)
+
+## Scripts
+
+### findEtextbooks.py
+### bookstoreExpand.py
+### attachPricesSources.py
+
+## Generated Files
+
+### do-not-have.csv
+### have-drmfree.csv
+### have-underdrm.csv
+### *-prices.csv
+### class-list.csv
+### hashes/
+
+## TODO
+
+- Finish README
+- standardize hashfile names (map-### vs. cat###)
+- Generalize Bookstore files
