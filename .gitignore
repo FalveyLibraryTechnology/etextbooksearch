@@ -1,0 +1,13 @@
+# SourceFiles
+BookstoreFiles/
+CatalogFiles/
+PublisherFiles/
+
+# Generated files
+hashes/
+*.csv
+*.json
+
+# Python
+__pycache__/
+*$py.class
