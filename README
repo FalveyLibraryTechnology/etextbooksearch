@@ -8,6 +8,8 @@
 ### bookstoreExpand.py
 ### attachPricesSources.py
 
+![diagram of the scripts and generated files](./diagram.svg)
+
 ## Generated Files
 
 ### do-not-have.csv
