@@ -46,7 +46,8 @@ def getPrices(filename, path):
                     priceCol = col
                     matchMax = matches
         if priceCol > -1:
-            print ('  price column: %s' % 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z AAABACADAEAFAGAHAIAJAKALAMANAOAPAQARASATAUAVAWAXAYAZ'[priceCol*2:priceCol*2+2], matchMax)
+            charPairs = 'A B C D E F G H I J K L M N O P Q R S T U V W X Y Z AAABACADAEAFAGAHAIAJAKALAMANAOAPAQARASATAUAVAWAXAYAZ'
+            print ('  price column: %s' % charPairs[priceCol*2:priceCol*2+2])
         else:
             print ('  no price column')
         #
@@ -67,9 +68,9 @@ def getPrices(filename, path):
                 if len(risbns) > 0:
                     for i in range(len(risbns)):
                         price = ''
-                        if priceCol >= 0:
+                        if priceCol > -1:
                             price = rvalues[priceCol]
-                        risbns[i] += ',%s,%s,%u' % (rvalues[priceCol], filename, row + 1)
+                        risbns[i] += ',%s,%s,%u' % (price, filename, row + 1)
                 isbns.extend(risbns)
                 # bar.progress()
     stripped = []
@@ -82,42 +83,39 @@ def getPrices(filename, path):
 def runFileComparison(filename):
     print ('Comparing to %s...' % filename)
     classList = {}
-    with open('class-list.csv', "r") as listcsv:
-        with open(mapHashPath(), "r") as map:
-            mapLines = map.readlines()
-            for row in listcsv:
-                isbn = row[:13]
-                classes = row[13:]
-                classList[isbn] = classes
-                # Compare to all editions
-                for set in mapLines:
-                    if isbn == set[:13]:
-                        alts = set[14:].strip(',\n').split(',')
-                        for alt in alts:
-                            classList[alt] = classes
-    with open(filename, "r") as dnhFile:
-        dnhLines = dnhFile.readlines()
-        dnhCount = len(dnhLines)
+    # Bookstore JSON
+    bookstoreJSON = []
+    for file in os.listdir('BookstoreFiles'):
+        with open(os.path.join('BookstoreFiles', file), 'r') as jsonFile:
+            bookstoreJSON.extend(json.load(jsonFile))
+    with open(mapHashPath(), "r") as map:
+        mapLines = map.readlines()
+        for book in bookstoreJSON:
+            if len(book['classes']) == 0:
+                continue
+            classList[book['isbn']] = book['classes']
+            # Compare to all editions
+            for set in mapLines:
+                if book['isbn'] == set[:13]:
+                    alts = set[14:].strip(',\n').split(',')
+                    for alt in alts:
+                        classList[alt] = book['classes']
+    with open(filename, "r") as matchFile:
+        matchLines = [l.strip() for l in matchFile.readlines()] # fix new line problems
         priceRows = []
         row = 0 # ISBNs are sorted in both files, so we don't need to start from the beginning each time
-        isbn = dnhLines[row][:13]
-        isbnPattern = '^' + isbn
-        if isbn in classList:
-            dnhLines[row] += classList[isbn]
-        for p in range(len(priceList)):
-            if re.search(isbnPattern, priceList[p]):
-                priceRows.append(re.sub(isbnPattern, priceList[p], dnhLines[row]))
+        for match in matchLines:
+            isbn = match[:13]
+            if isbn in classList:
+                match += ',%s' % ','.join(['%s---%s' % (c['code'], c['prof']) for c in classList[isbn]])
+            isbnPattern = '^' + isbn
+            while row < len(priceList) and not re.search(isbnPattern, priceList[row]):
                 row += 1
-                if row >= dnhCount:
-                    break
-                isbn = dnhLines[row][:13]
-                isbnPattern = '^' + isbn
-                if isbn in classList:
-                    dnhLines[row] += classList[isbn]
-        for i in range(row, dnhCount):
-            priceRows.append(dnhLines[i])
+            if row >= len(priceList):
+                break
+            priceRows.append(re.sub(isbnPattern, priceList[row], match))
         with open('%s-prices.csv' % filename.split('.')[0], "w") as outFile:
-            outFile.write("%s" % ''.join(priceRows))
+            outFile.write("%s" % '\n'.join(priceRows))
 
 priceList = []
 if os.path.exists('hashes/prices.txt'):
@@ -129,8 +127,8 @@ else:
     for file in os.listdir('BookstoreFiles'):
         print ('  %s' % file)
         with open(os.path.join('BookstoreFiles', file)) as jsonfile:
-            json = json.load(jsonfile)
-            for book in json:
+            bjson = json.load(jsonfile)
+            for book in bjson:
                 if 'price' in book:
                     priceList.append('%s,%s,%s' % (book['isbn'], book['price'], file))
         print ('  %s prices found' % comma(len(priceList)))

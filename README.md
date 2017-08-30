@@ -51,7 +51,5 @@ Formatting is more about compatibility with the current system, not optimization
 
 ## TODO
 
-- Generalize Bookstore files (json)
 - Finish README
-- standardize hashfile names (map-### vs. cat###)
 - Optimization: Store hashes in Python binary format (marshal)
