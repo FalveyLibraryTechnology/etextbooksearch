@@ -14,6 +14,7 @@ Formatting is more about compatibility with the current system, not optimization
 {
   "title": 'The Bride of the Tomb',
   "isbn": "9781486484157",
+  "price": 18.83,
   "classes": [
     {
       "code": "ENG 404",
