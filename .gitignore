@@ -11,3 +11,7 @@ hashes/
 # Python
 __pycache__/
 *$py.class
+
+# Villanova specific
+VillanovaStoreFiles/
+Archive/
