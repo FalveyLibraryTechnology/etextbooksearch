@@ -37,6 +37,8 @@ Takes all of your input files and outputs comparison files.
   - map-hash stores the ISBN and its results on separate lines for comparison later
 - Expands ISBN with metadata from WorldCat
 
+| Filename          | Description |
+|-------------------|-------------|
 | do-not-have.csv   | All the ISBNs that were in expanded BookstoreFiles/ and PublisherFiles/, but not CatalogFiles/. |
 | have-underdrm.csv | All the ISBNs that were in expanded BookstoreFiles/ and CatalogFiles/, but not PublisherFiles/. |
 | have-drmfree.csv  | ISBNs that were in all three. |
