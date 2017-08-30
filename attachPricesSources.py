@@ -1,23 +1,19 @@
+import json
 import os
-import io
-import sys
 import re
-import string
 import requests
+import string
 from xlrd import open_workbook  # Excel files
 
 from utils import comma, mapHashPath
 
-def getPrices(filename, path, saveClasses = False):
+def getPrices(filename, path):
     isbnPattern1 = re.compile(r'978(?:-?\d){10}')
     isbnPattern2 = re.compile(r'[A-Za-z]((?:-?\d){10})\D')
     isbnPattern3 = re.compile(r'[A-zA-Z]((?:-?\d){9}X)')
     isbnPattern4 = re.compile(r'a(\d{10})\D')
     priceDecPattern = re.compile(r'^[\$ ]*(?P<price>\d{2,4}\.\d{1,2})$')
     priceWholePattern = re.compile(r'^[\$ ]*(?P<price>\d{2,4})$')
-
-    classList = []
-    nextISBN = ''
 
     isbns = []
     print ('- %s... (opening Excel file)' % filename)
@@ -69,17 +65,11 @@ def getPrices(filename, path, saveClasses = False):
                 risbns.extend([isbnPattern3.findall(str(cell))[0] for cell in rvalues if isbnPattern3.search(str(cell))])
                 risbns.extend([isbnPattern4.findall(str(cell))[0] for cell in rvalues if isbnPattern4.search(str(cell))])
                 if len(risbns) > 0:
-                    if saveClasses and nextISBN:
-                        # print (nextISBN)
-                        classList.append(nextISBN)
-                        nextISBN = risbns[0].split('.')[0]
                     for i in range(len(risbns)):
+                        price = ''
                         if priceCol >= 0:
-                            risbns[i] += ',%s,%s,%u' % (rvalues[priceCol], filename, row + 1)
-                        else:
-                            risbns[i] += ',,%s,%u' % (filename, row + 1)
-                elif saveClasses and not rvalues[3]:
-                    nextISBN += ',%s---%s' % (rvalues[1].strip(), rvalues[4])
+                            price = rvalues[priceCol]
+                        risbns[i] += ',%s,%s,%u' % (rvalues[priceCol], filename, row + 1)
                 isbns.extend(risbns)
                 # bar.progress()
     stripped = []
@@ -87,11 +77,6 @@ def getPrices(filename, path, saveClasses = False):
     for y in isbns:
         stripped.append(y.translate(trans))
     stripped = list(set(stripped))
-    # bar.finish('found: %s' % comma(len(stripped)))
-    if saveClasses:
-        print('> saving class list')
-        with open('class-list.csv', "w") as outFile:
-            outFile.write("%s" % '\n'.join(classList[1:]))
     return stripped
 
 def runFileComparison(filename):
@@ -140,9 +125,15 @@ if os.path.exists('hashes/prices.txt'):
     with open('hashes/prices.txt', "r") as priceFile:
         priceList = sorted([row.strip() for row in priceFile])
 else:
-    # priceList = getPrices('Springer_eBook_list_20170710_165150.xlsx', 'PublisherFiles')
-    # exit(0)
-    priceList = getPrices('Fall BookList 7-25-2017 (Library).xlsx', 'BookstoreFiles', saveClasses = True)
+    print ('- BookstoreFiles/')
+    for file in os.listdir('BookstoreFiles'):
+        print ('  %s' % file)
+        with open(os.path.join('BookstoreFiles', file)) as jsonfile:
+            json = json.load(jsonfile)
+            for book in json:
+                if 'price' in book:
+                    priceList.append('%s,%s,%s' % (book['isbn'], book['price'], file))
+        print ('  %s prices found' % comma(len(priceList)))
     for file in os.listdir('PublisherFiles'):
         priceList.extend(getPrices(file, 'PublisherFiles'))
     priceList = sorted(priceList)

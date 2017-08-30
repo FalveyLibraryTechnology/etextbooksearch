@@ -10,15 +10,15 @@ Formatting is more about compatibility with the current system, not optimization
 |--------|-------------------|
 | CatalogFiles/   | Any plain text format. We use a plain list of ISBNs. |
 | PublisherFiles/ | Either Excel or any plain text format. ISBNs are discovered automatically, regardless of layout. |
-| BookstoreFiles/ | JSON array of book objects: ```
+| BookstoreFiles/ | JSON array of book objects: ```JS
 {
-  "title": 'The Bride of the Tomb',
+  "title": "The Bride of the Tomb",
   "isbn": "9781486484157",
   "price": 18.83,
   "classes": [
     {
       "code": "ENG 404",
-      "prof": "MILLER, Alex. McVeigh" // Name format isn't enforced
+      "prof": "MILLER, Alex. McVeigh" // Name format doesn't matter
     }
   ]
 }
