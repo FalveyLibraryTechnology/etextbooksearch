@@ -10,7 +10,8 @@ Formatting is more about compatibility with the current system, not optimization
 |--------|-------------------|
 | CatalogFiles/   | All ebook and physical books currently in the collection | Any plain text format. We use a plain list of ISBNs. |
 | PublisherFiles/ | "All" available ebooks | Either Excel or any plain text format. ISBNs are discovered automatically, regardless of layout. |
-| BookstoreFiles/ | All books required for courses this semester | JSON array of book objects: ```JS
+| BookstoreFiles/ | All books required for courses this semester | JSON array of book objects (format below) |
+```JS
 {
   "title": "The Bride of the Tomb",
   "isbn": "9781486484157",
@@ -22,7 +23,7 @@ Formatting is more about compatibility with the current system, not optimization
     }
   ]
 }
-``` |
+```
 
 ## Scripts
 
