@@ -51,7 +51,7 @@ Only does the WorldCat ISBN expansion, always overwriting the appropriate expand
 
 Adds price, source, and class information to the three comparison files. Creates csv's with isbn,price,source,metdata, and classes info (in that order). Naming convention is {source file name}-prices.csv.
 
-![diagram of the scripts and generated files](./diagram.svg)
+![diagram of the scripts and generated files](./diagram.jpg "Simple!")
 
 ## TODO
 
