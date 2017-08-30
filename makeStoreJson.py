@@ -5,6 +5,7 @@ from xlrd import open_workbook  # Excel files
 from ProgressBar import ProgressBar
 from utils import comma
 
+# TODO: ADD PRICES
 def newBookObj(row):
     return {
         'title': row[3],
