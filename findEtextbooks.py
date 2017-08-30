@@ -1,9 +1,8 @@
+import json
 import os
-import io
-import sys
 import re
-import string
 import requests
+import string
 from checksumdir import dirhash # folder md5
 from xlrd import open_workbook  # Excel files
 
@@ -21,7 +20,7 @@ def getISBNsFromFolder(foldername, prefix=''):
     if os.path.exists(foldername):
         print ('\n%s/' % foldername)
         hash = dirhash(foldername, 'md5')
-        hashFile = 'hashes/%s%s.txt' % (prefix, hash)
+        hashFile = 'hashes/%s-%s.txt' % (prefix, hash)
         print ('= %s' % hash)
         if not os.path.exists(hashFile):
             for file in os.listdir(foldername):
@@ -57,37 +56,25 @@ def getMetadata (matchingISBNs, outFileName):
             else:
                 csvfile.write("%s\n" % str(response.text).strip())
 
-# ===== MAIN ===== #
-courseISBNs = getISBNsFromFolder(storeFilePath, prefix='store')
+# Expanded ISBNs
+print ('BookstoreFiles/')
 expandedHashFile = expandedHashPath()
+print ('= %s' % expandedHashFile)
 if not os.path.exists(expandedHashFile):
-    xCourseISBNs = expandCourseISBNs(courseISBNs, worldcatAI)
+    # Bookstore JSON
+    bookstoreJSON = []
+    for file in os.listdir(storeFilePath):
+        with open(os.path.join(storeFilePath, file), 'r') as jsonFile:
+            bookstoreJSON.extend(json.load(jsonFile))
+    xCourseISBNs = expandCourseISBNs(bookstoreJSON, worldcatAI)
 else:
     with open(expandedHashFile, "r") as courseFile:
         xCourseISBNs = [book.strip() for book in courseFile]
-    print ('> Editions loaded from %s (%s)' % (expandedHashFile, comma(len(xCourseISBNs))))
+    print ('> Editions loaded from file (%s)' % comma(len(xCourseISBNs)))
 
 pubISBNs = getISBNsFromFolder(pubFilePath, prefix='pub')
 
-catISBNs = []
-if os.path.exists(catFilePath):
-    print ('\nCatalogFiles/')
-    cathash = dirhash(catFilePath, 'md5')
-    cathashFile = 'hashes/cat%s.txt' % cathash
-    print ('= %s' % cathash)
-    if not os.path.exists(cathashFile):
-        for catFile in os.listdir(catFilePath):
-            catISBNs = catISBNs + (findISBNs(catFile, catFilePath))
-        catISBNs = sortUnique(catISBNs)
-        with open(cathashFile, "w") as hashFile:
-            hashFile.write("%s" % '\n'.join(catISBNs))
-    else:
-        with open(cathashFile, "r") as hashFile:
-            catISBNs = [isbn.strip() for isbn in hashFile]
-        print ('= Loaded CatalogFiles from file (%s)' % comma(len(catISBNs)))
-else:
-    print ('\nNo CatalogFiles')
-print ('')
+catISBNs = getISBNsFromFolder(catFilePath, prefix='cat')
 
 # match the files
 # needToBuy in pubFile but not cat, notDRMfree in cat but not pubfile, matches in pubfile and cat

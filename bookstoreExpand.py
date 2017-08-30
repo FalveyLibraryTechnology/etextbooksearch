@@ -10,9 +10,10 @@ storeFilePath = "BookstoreFiles"
 courseISBNs = []
 if os.path.exists(storeFilePath):
     print ('BookstoreFiles/')
-    for storeFile in os.listdir(storeFilePath):
-        courseISBNs = courseISBNs + (findExcelISBNs(storeFile,storeFilePath))
-    expandCourseISBNs(courseISBNs, worldcatAI)
+    bookstoreJSON = []
+    for file in os.listdir(storeFilePath):
+        with open(os.path.join(storeFilePath, file), 'r') as jsonFile:
+            bookstoreJSON.extend(json.load(jsonFile))
+    expandCourseISBNs(bookstoreJSON, worldcatAI)
 else:
     print ('No BookstoreFiles')
-    exit(0)
