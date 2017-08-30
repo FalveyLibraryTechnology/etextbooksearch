@@ -70,7 +70,7 @@ def getPrices(filename, path):
                         price = ''
                         if priceCol > -1:
                             price = rvalues[priceCol]
-                        risbns[i] += ',%s,%s,%u' % (price, filename, row + 1)
+                        risbns[i] += ',%s,%s' % (price, filename)
                 isbns.extend(risbns)
                 # bar.progress()
     stripped = []
@@ -115,6 +115,7 @@ def runFileComparison(filename):
                 break
             priceRows.append(re.sub(isbnPattern, priceList[row], match))
         with open('%s-prices.csv' % filename.split('.')[0], "w") as outFile:
+            outFile.write("isbn,price,source,metdata?,classes...\n")
             outFile.write("%s" % '\n'.join(priceRows))
 
 priceList = []
