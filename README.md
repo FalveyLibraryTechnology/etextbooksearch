@@ -4,7 +4,7 @@
 
 ## Sources
 
-Formatting is more about compatibility with the current system, not optimization. Found ISBNs are sorted and hashed into
+Formatting is more about compatibility with the current system, not optimization. Found ISBNs are sorted and hashed into a hashes/ directory.
 
 | Folder | Input description |
 |--------|-------------------|
