@@ -15,6 +15,7 @@ def newBookObj(row):
     }
 
 for file in os.listdir('VillanovaStoreFiles'):
+    print ('opening %s' % file)
     with open_workbook(os.path.join('VillanovaStoreFiles', file)) as book:
         classList = []
         bookObj = {}
