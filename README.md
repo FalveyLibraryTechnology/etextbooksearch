@@ -55,6 +55,3 @@ Adds price, source, and class information to the three comparison files. Creates
 
 ![diagram of the scripts and generated files](./diagram.jpg "Simple!")
 
-## TODO
-
-- Optimization: Store hashes in Python binary format (marshal)
