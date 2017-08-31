@@ -2,6 +2,8 @@
 
 > Lovingly forked and heavily based upon [https://github.com/myqua/etextbooksearch](https://github.com/myqua/etextbooksearch)
 
+All scripts built for **Python 3.x**.
+
 ## Sources
 
 Formatting is more about compatibility with the current system, not optimization. Found ISBNs are sorted and hashed into a hashes/ directory.
