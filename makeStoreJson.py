@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from xlrd import open_workbook  # Excel files
 
@@ -48,6 +49,6 @@ for file in os.listdir('VillanovaStoreFiles'):
                     })
                 bar.progress()
         bar.finish()
-        print('> saving class list')
+        print('> saving store list')
         with open('BookstoreFiles/%s.json' % file, "w") as outFile:
-            json.dump(classList, outFile)
+            json.dump(classList, outFile, separators=(',', ':'))
