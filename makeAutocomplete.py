@@ -5,6 +5,16 @@ import json
 import urllib.parse
 
 from utils import mapHashPath
+from ProgressBar import ProgressBar
+
+# Load Bookstore
+storeJSON = {}
+for file in os.listdir('BookstoreFiles'):
+    with open(os.path.join('BookstoreFiles', file)) as jf:
+        j = json.load(jf)
+        for book in j:
+            book['classes'] = ['%s (%s)' % (c['code'], c['prof'].capitalize()) for c in book['classes']]
+            storeJSON[str(book['isbn'])] = book
 
 def formatForAC(filename, msg):
     map = {}
@@ -18,8 +28,8 @@ def formatForAC(filename, msg):
             map[row[0]] = {
                 'value': row[0],
                 'label': row[3],
-                'description': '%s<br/><b>%s</b>' % (row[0], msg),
                 'edition': row[1],
+                'author': (row[4][:47] + '...') if len(row[4]) > 50 else row[4],
                 'msg': msg
             }
             if len(row) > 6:
@@ -27,45 +37,64 @@ def formatForAC(filename, msg):
     return map
 
 items = {}
-items.update(formatForAC('have-underdrm.csv', 'Reserved in Course Reserves'))
-items.update(formatForAC('have-drmfree.csv', 'Ebook Available'))
-# Faculty books
+
+# Books in the library
+# Separate by direct matching with store item
+reserves = formatForAC('have-underdrm.csv', 'Reserved in Course Reserves')
+for isbn in reserves:
+    if not isbn in storeJSON:
+        reserves[isbn]['msg'] = '%s Edition In Library Collection' % reserves[isbn]['edition']
+items.update(reserves)
+
+ebooks = formatForAC('have-drmfree.csv', 'Correct Edition Available as eBook')
+for isbn in ebooks:
+    if not isbn in storeJSON:
+        ebooks[isbn]['msg'] = '%s Edition eBook Available' % ebooks[isbn]['edition']
+items.update(ebooks)
+
 doNotHave = {}
 doNotHave.update(formatForAC('do-not-have.csv', 'Available for ebook purchase'))
 # Add Class and teacher information
-with open('class-list.csv', 'r') as classList:
-    for line in classList:
-        parts = line.strip().split(',')
-        if parts[0] in items:
-            items[parts[0]]['classes'] = []
-            for i in range(1, len(parts)):
-                p = parts[i].split('---')
-                items[parts[0]]['classes'].append('%s (%s)' % (p[0], p[1].title()))
-        elif parts[0] in doNotHave:
-            doNotHave[parts[0]]['classes'] = []
-            for i in range(1, len(parts)):
-                p = parts[i].split('---')
-                doNotHave[parts[0]]['classes'].append('%s (%s)' % (p[0], p[1].title()))
+# Massage descriptions
+def addClassInfo(dict):
+    for isbn in dict:
+        if len(dict[isbn]['author']) > 0:
+            dict[isbn]['description'] = '<i>%s</i><br/>%s<br/><b>%s</b>' % (dict[isbn]['author'], dict[isbn]['value'], dict[isbn]['msg'])
         else:
-            # TODO SAD CLASSES
+            dict[isbn]['description'] = '%s<br/><b>%s</b>' % (dict[isbn]['value'], dict[isbn]['msg'])
+        del dict[isbn]['author']
+        del dict[isbn]['edition']
+        del dict[isbn]['msg']
+        if isbn in storeJSON:
+            dict[isbn]['classes'] = storeJSON[isbn]['classes']
+        else:
+            for key in mapJson:
+                if isbn in mapJson[key]:
+                    dict[isbn]['classes'] = storeJSON[key]['classes']
+    return dict
+
+with open(mapHashPath()) as jf:
+    mapJson = json.load(jf)
+    items = addClassInfo(items)
+    doNotHave = addClassInfo(doNotHave)
 
 final = {'items': items, 'faculty': doNotHave}
+
 # Map related ISBNs
-with open(mapHashPath(), 'r') as source:
-    keys = list(items.keys())
-    print (len(keys))
-    keys.extend(doNotHave.keys())
-    print (len(keys))
-    reader = csv.reader(source, delimiter=',')
-    map = []
-    for i, row in enumerate(reader):
-        matches = [isbn for isbn in row if isbn in keys]
-        if matches:
-            map.append({
-                'editions': row,
-                'matches': matches
-            })
-    final.update({'isbnmap': map})
+keys = list(items.keys())
+print (len(keys))
+keys.extend(doNotHave.keys())
+print (len(keys))
+
+map = []
+for isbn in mapJson:
+    matches = [x for x in mapJson[isbn] if x in keys]
+    if matches:
+        map.append({
+            'editions': mapJson[isbn],
+            'matches': matches
+        })
+final.update({'isbnmap': map})
 
 with open('autocomplete.json', 'w') as out:
-    json.dump(final, out)
+    json.dump(final, out, separators=(',', ':'))
