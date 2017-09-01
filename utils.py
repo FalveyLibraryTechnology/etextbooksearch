@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import re
 import sys
@@ -76,25 +77,26 @@ def findExcelISBNs (filename, path):
 def expandedHashPath():
     return 'hashes/expanded-%s.txt' % dirhash('BookstoreFiles', 'md5')
 def mapHashPath():
-    return 'hashes/map-%s.csv' % dirhash('BookstoreFiles', 'md5')
+    return 'hashes/map-%s.json' % dirhash('BookstoreFiles', 'md5')
 
 def expandCourseISBNs (bookstoreJSON, worldcatAI):
     courseISBNs = [str(book['isbn']) for book in bookstoreJSON] # Add the base so that when we get overlimit messages, we have something useful
     xCourseISBNs = courseISBNs[:]
     bar = ProgressBar(len(courseISBNs), label='> Downloading editions for %s ISBNs ' % comma(len(courseISBNs)))
-    xMap = [];
+    xMap = {};
     for isbn in courseISBNs:
         url = 'http://xisbn.worldcat.org/webservices/xid/isbn/'+isbn+'?method=getEditions&fl=isbn&format=txt&ai='+worldcatAI
         response = requests.get(url)
-        risbns = response.text.split('\n')
+        risbns = response.text.strip().split('\n')
         xCourseISBNs.extend(risbns)
-        xMap.append(','.join(risbns))
+        if not risbns[0] == 'unknownId':
+            xMap[isbn] = risbns
         bar.progress()
     bar.finish()
     xCourseISBNs = sortUnique(xCourseISBNs)
     with open(expandedHashPath(), "w") as outfile:
         outfile.write("%s" % '\n'.join(xCourseISBNs))
     with open(mapHashPath(), "w") as outfile:
-        outfile.write("%s" % '\n'.join(xMap))
+        json.dump(xMap, outfile, separators=(',', ':'))
     print ('- saved (%s)' % dirhash('BookstoreFiles', 'md5'))
     return xCourseISBNs

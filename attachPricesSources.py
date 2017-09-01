@@ -89,16 +89,15 @@ def runFileComparison(filename):
         with open(os.path.join('BookstoreFiles', file), 'r') as jsonFile:
             bookstoreJSON.extend(json.load(jsonFile))
     with open(mapHashPath(), "r") as map:
-        mapLines = map.readlines()
+        mapJSON = json.load(map)
         for book in bookstoreJSON:
             if len(book['classes']) == 0:
                 continue
             classList[book['isbn']] = book['classes']
             # Compare to all editions
-            for set in mapLines:
-                if book['isbn'] == set[:13]:
-                    alts = set[14:].strip(',\n').split(',')
-                    for alt in alts:
+            for isbn in mapJSON:
+                if book['isbn'] == isbn:
+                    for alt in mapJSON[isbn]:
                         classList[alt] = book['classes']
     with open(filename, "r") as matchFile:
         matchLines = [l.strip() for l in matchFile.readlines()] # fix new line problems
