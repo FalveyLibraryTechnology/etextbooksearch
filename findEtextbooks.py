@@ -111,10 +111,10 @@ for x in xCourseISBNs:
 
 bar.finish('no match: %s\n' % comma(noMatch))
 
-getMetadata (matches, "have-drmfree.csv")     # have and open access
-print ('have-drmfree: %u' % len(matches))
-getMetadata (needToBuy, "do-not-have.csv")    # don't have
-print ('do-not-have: %u' % len(needToBuy))
-getMetadata (notDRMfree, "have-underdrm.csv") # have and not open access: physical books, CASA catalog, restricted ebooks
-print ('have-underdrm: %u' % len(notDRMfree))
+getMetadata (matches, "have-ebooks.csv")     # have and open access
+print ('have-ebooks: %u' % len(matches))
+getMetadata (needToBuy, "available-ebooks.csv")    # don't have
+print ('available-ebooks: %u' % len(needToBuy))
+getMetadata (notDRMfree, "have-print.csv") # have and not open access: physical books, CASA catalog, restricted ebooks
+print ('have-print: %u' % len(notDRMfree))
 
