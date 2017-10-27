@@ -57,7 +57,7 @@ def getMetadata (matchingISBNs, outFileName):
             else:
                 csvfile.write("%s\n" % str(response.text).strip())
             bar.progress()
-        bar.finish()
+        bar.finish("%3f%%" % (100 * len(matchingISBNs) / len(bookstoreISBNs)))
 
 # Expanded ISBNs
 print ('BookstoreFiles/')
@@ -83,12 +83,7 @@ pubISBNs = getISBNsFromFolder(pubFilePath, prefix='pub')
 catISBNs = getISBNsFromFolder(catFilePath, prefix='cat')
 
 # match the files
-# needToBuy in pubFile but not cat, notDRMfree in cat but not pubfile, matches in pubfile and cat
-matches = []
-notDRMfree = []
-exactPrint = []
-needToBuy = []
-noMatch = 0
+# needToBuy in pubFile but not cat, printBooks in cat but not pubfile, ebookMatches in pubfile and cat
 bar = ProgressBar(
     len(xCourseISBNs),
     label='Looking for %s ISBNs in a pool of %s ' % (
@@ -97,6 +92,12 @@ bar = ProgressBar(
     )
 )
 
+ebookMatches = []
+exactEbooks = []
+printBooks = []
+exactPrint = []
+needToBuy = []
+noMatch = 0
 catIndex = 0
 pubIndex = 0
 for x in xCourseISBNs:
@@ -108,20 +109,24 @@ for x in xCourseISBNs:
     inCats = catIndex < len(catISBNs) and x == catISBNs[catIndex]
     if pubIndex < len(pubISBNs) and x == pubISBNs[pubIndex]:
         if inCats:
-            matches.append(x)
+            if x in bookstoreISBNs:
+                exactEbooks.append(x)
+            ebookMatches.append(x)
         else:
             needToBuy.append(x)
     elif inCats:
         if x in bookstoreISBNs:
             exactPrint.append(x)
-        notDRMfree.append(x)
-    else:
+        printBooks.append(x)
+    elif x in bookstoreISBNs:
         noMatch = noMatch + 1
 
-bar.finish('no match: %s\n' % comma(noMatch))
+bar.finish()
 
-print ("Printing results...")
-getMetadata (matches, "have-ebooks")     # have and open access
+print ("\nPrinting results...")
+getMetadata (ebookMatches, "have-ebooks")     # have and open access
+getMetadata (exactEbooks, "have-ebooks-exact") # exact class ebookMatches for above
+getMetadata (printBooks, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
+getMetadata (exactPrint, "have-print-exact") # exact class ebookMatches for above
 getMetadata (needToBuy, "available-ebooks")    # don't have
-getMetadata (notDRMfree, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
-getMetadata (exactPrint, "have-print-exact") # exact class matches for above
+print ('no matches: %s (%3d%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
