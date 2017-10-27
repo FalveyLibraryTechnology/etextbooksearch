@@ -40,20 +40,20 @@ items = {}
 
 # Books in the library
 # Separate by direct matching with store item
-reserves = formatForAC('have-underdrm.csv', 'Reserved in Course Reserves')
+reserves = formatForAC('have-print.csv', 'Reserved in Course Reserves')
 for isbn in reserves:
     if not isbn in storeJSON:
         reserves[isbn]['msg'] = '%s Edition In Library Collection' % reserves[isbn]['edition']
 items.update(reserves)
 
-ebooks = formatForAC('have-drmfree.csv', 'Correct Edition Available as eBook')
+ebooks = formatForAC('have-ebooks.csv', 'Correct Edition Available as eBook')
 for isbn in ebooks:
     if not isbn in storeJSON:
         ebooks[isbn]['msg'] = '%s Edition eBook Available' % ebooks[isbn]['edition']
 items.update(ebooks)
 
 doNotHave = {}
-doNotHave.update(formatForAC('do-not-have.csv', 'Available for ebook purchase'))
+doNotHave.update(formatForAC('available-ebooks.csv', 'Available for ebook purchase'))
 # Add Class and teacher information
 # Massage descriptions
 def addClassInfo(dict):
