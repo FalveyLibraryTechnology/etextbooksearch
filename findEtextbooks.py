@@ -43,11 +43,12 @@ def getISBNsFromFolder(foldername, prefix=''):
         return []
 
 def getMetadata (matchingISBNs, outFileName):
-    with open (outFileName, "w") as csvfile:
+    with open ("%s.csv" % outFileName, "w") as csvfile:
         if len(matchingISBNs) == 0:
             csvfile.write("nothing")
             return
         fields = 'isbn,year,ed,title,author,lang,url,publisher,form,city'
+        bar = ProgressBar(len(matchingISBNs), label='%s: %u ' % (outFileName, len(matchingISBNs)))
         for isbn in matchingISBNs:
             urlz = 'http://xisbn.worldcat.org/webservices/xid/isbn/'+isbn+'?method=getMetadata&fl='+fields+'&format=csv&ai='+worldcatAI
             response = requests.get(urlz)
@@ -55,17 +56,22 @@ def getMetadata (matchingISBNs, outFileName):
                 csvfile.write("%s\n" % isbn)
             else:
                 csvfile.write("%s\n" % str(response.text).strip())
+            bar.progress()
+        bar.finish()
 
 # Expanded ISBNs
 print ('BookstoreFiles/')
 expandedHashFile = expandedHashPath()
 print ('= %s' % expandedHashFile)
+# Bookstore JSON
+bookstoreISBNs = []
+bookstoreJSON = []
+for file in os.listdir(storeFilePath):
+    with open(os.path.join(storeFilePath, file), 'r') as jsonFile:
+        bookstoreJSON.extend(json.load(jsonFile))
+bookstoreISBNs = [x['isbn'] for x in bookstoreJSON]
+
 if not os.path.exists(expandedHashFile):
-    # Bookstore JSON
-    bookstoreJSON = []
-    for file in os.listdir(storeFilePath):
-        with open(os.path.join(storeFilePath, file), 'r') as jsonFile:
-            bookstoreJSON.extend(json.load(jsonFile))
     xCourseISBNs = expandCourseISBNs(bookstoreJSON, worldcatAI)
 else:
     with open(expandedHashFile, "r") as courseFile:
@@ -80,6 +86,7 @@ catISBNs = getISBNsFromFolder(catFilePath, prefix='cat')
 # needToBuy in pubFile but not cat, notDRMfree in cat but not pubfile, matches in pubfile and cat
 matches = []
 notDRMfree = []
+exactPrint = []
 needToBuy = []
 noMatch = 0
 bar = ProgressBar(
@@ -105,16 +112,16 @@ for x in xCourseISBNs:
         else:
             needToBuy.append(x)
     elif inCats:
+        if x in bookstoreISBNs:
+            exactPrint.append(x)
         notDRMfree.append(x)
     else:
         noMatch = noMatch + 1
 
 bar.finish('no match: %s\n' % comma(noMatch))
 
-getMetadata (matches, "have-ebooks.csv")     # have and open access
-print ('have-ebooks: %u' % len(matches))
-getMetadata (needToBuy, "available-ebooks.csv")    # don't have
-print ('available-ebooks: %u' % len(needToBuy))
-getMetadata (notDRMfree, "have-print.csv") # have and not open access: physical books, CASA catalog, restricted ebooks
-print ('have-print: %u' % len(notDRMfree))
-
+print ("Printing results...")
+getMetadata (matches, "have-ebooks")     # have and open access
+getMetadata (needToBuy, "available-ebooks")    # don't have
+getMetadata (notDRMfree, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
+getMetadata (exactPrint, "have-print-exact") # exact class matches for above
