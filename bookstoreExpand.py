@@ -2,8 +2,8 @@ import io
 import json
 import os
 
-from utils import expandCourseISBNs, findExcelISBNs, sortUnique
-from ProgressBar import ProgressBar
+from src.utils import expandCourseISBNs, findExcelISBNs, sortUnique
+from src.ProgressBar import ProgressBar
 
 worldcatAI = 'falveylibrary'
 storeFilePath = "BookstoreFiles"
