@@ -133,5 +133,5 @@ getMetadata (ebookMatches, "have-ebooks")     # have and open access
 getMetadata (exactEbooks, "have-ebooks-exact", exact=True) # exact class ebookMatches for above
 getMetadata (printBooks, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
 getMetadata (exactPrint, "have-print-exact", exact=True) # exact class ebookMatches for above
-getMetadata (needToBuy, "available-ebooks")    # don't have
+getMetadata (needToBuy, "ebooks-available-for-purchase")    # don't have
 print ('no matches: %s (%.3f%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
