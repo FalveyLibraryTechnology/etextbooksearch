@@ -6,8 +6,8 @@ import string
 from checksumdir import dirhash # folder md5
 from xlrd import open_workbook  # Excel files
 
-from utils import *
-from ProgressBar import ProgressBar
+from src.utils import *
+from src.ProgressBar import ProgressBar
 
 worldcatAI = 'falveylibrary'
 

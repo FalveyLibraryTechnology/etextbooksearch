@@ -8,7 +8,7 @@ import requests
 from checksumdir import dirhash # folder md5
 from xlrd import open_workbook  # Excel files
 
-from ProgressBar import ProgressBar
+from .ProgressBar import ProgressBar
 
 def comma(num):
     return '{:,}'.format(num)
