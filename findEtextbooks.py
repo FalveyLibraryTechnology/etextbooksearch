@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import re
@@ -8,6 +9,9 @@ from xlrd import open_workbook  # Excel files
 
 from src.utils import *
 from src.ProgressBar import ProgressBar
+
+currentPeriod = "2017_fall"
+print ("\nCURRENT PERIOD: %s\n" % currentPeriod)
 
 worldcatAI = 'falveylibrary'
 
@@ -127,6 +131,35 @@ for x in xCourseISBNs:
         noMatch = noMatch + 1
 
 bar.finish()
+
+print ("\nSaving Report for posterity...")
+if not os.path.exists("hashes/reports/"):
+    os.mkdir("hashes/reports/")
+if os.path.exists("hashes/reports/%s.json" % currentPeriod):
+    currentPeriod += datetime.datetime.now().strftime("_%y_%m_%d")
+with open ("hashes/reports/%s.json" % currentPeriod, "w") as hashreport:
+    report = {
+        "bookstore": {
+            "total-books": len(bookstoreJSON),
+            "expanded": len(xCourseISBNs),
+        },
+        "ebooks": {
+            "exact-matches": len(exactEbooks),
+            "expanded-matches": len(ebookMatches),
+        },
+        "hashes": {
+            "catalog": "hashes/cat-%s.txt" % dirhash("CatalogFiles", "md5"),
+            "expanded": expandedHashPath(),
+            "map": mapHashPath(),
+            "publishers": "hashes/pub-%s.txt" % dirhash("PublisherFiles", "md5"),
+        },
+        "no-matches": noMatch,
+        "print": {
+            "exact-matches": len(exactPrint),
+            "expanded-matches": len(printBooks),
+        },
+    }
+    json.dump(report, hashreport, sort_keys=True, indent=4)
 
 print ("\nPrinting results...")
 if not os.path.exists("reports/"):
