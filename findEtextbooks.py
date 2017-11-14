@@ -129,9 +129,11 @@ for x in xCourseISBNs:
 bar.finish()
 
 print ("\nPrinting results...")
-getMetadata (ebookMatches, "have-ebooks")     # have and open access
-getMetadata (exactEbooks, "have-ebooks-exact", exact=True) # exact class ebookMatches for above
-getMetadata (printBooks, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
-getMetadata (exactPrint, "have-print-exact", exact=True) # exact class ebookMatches for above
-getMetadata (needToBuy, "ebooks-available-for-purchase")    # don't have
+if not os.path.exists("reports/"):
+    os.mkdir("reports/")
+getMetadata (ebookMatches, "reports/have-ebooks")     # have and open access
+getMetadata (exactEbooks, "reports/have-ebooks-exact", exact=True) # exact class ebookMatches for above
+getMetadata (printBooks, "reports/have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
+getMetadata (exactPrint, "reports/have-print-exact", exact=True) # exact class ebookMatches for above
+getMetadata (needToBuy, "reports/ebooks-available-for-purchase")    # don't have
 print ('no matches: %s (%.3f%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
