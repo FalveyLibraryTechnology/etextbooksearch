@@ -23,24 +23,13 @@ def getClassName(classCode):
     titleEl = tree.xpath('//td[@class="nttitle"][2]')[0]
     return titleEl.text
 
-# Load bookstore hash file
-bookstore = []
-bookhashFile = mapHashPath()
-if not os.path.exists(bookhashFile):
-    print ("Run findEtextbooks.py first.")
-    exit (0)
-else:
-    with open(bookhashFile, "r") as hashjson:
-        bookstore = sortUnique(json.load(hashjson).keys())
-        print ('= Loaded bookstore ISBNs from file (%s)' % comma(len(bookstore)))
-
 # Load exploded print books we have
 catalog = []
-if not os.path.exists("have-print.csv"):
+if not os.path.exists("reports/have-print-exact.csv"):
     print ("Run findEtextbooks.py first.")
     exit (0)
 else:
-    with open('have-print.csv', newline='') as csvfile:
+    with open('reports/have-print-exact.csv', newline='') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             catalog.append(row[0]) # isbn
@@ -57,24 +46,21 @@ print ('\nComparing %s books to a catalog of %s...' % (comma(len(bookstore)), co
 cindex = 0
 with open('reserve-list.csv', 'w') as writeFile:
     writeFile.write('notes,isbn,call number,professor,class,class name,title\n')
-    bar = ProgressBar(len(bookstore))
-    for bisbn in bookstore:
-        while cindex < len(catalog) and bisbn > catalog[cindex]:
-            cindex += 1
-        if cindex < len(catalog) and bisbn == catalog[cindex]:
-            response = requests.get(solrURL(bisbn))
-            data = response.text.split('\n')
-            for book in bookstoreJSON:
-                if book['isbn'] == bisbn:
-                    for course in book['classes']:
-                        writeFile.write(',%s,"%s",%s,"%s","%s","%s"\n' % (
-                            bisbn,   # ISBN
-                            data[1], # Call number
-                            course['prof'], # Professor
-                            course['code'], # Class code
-                            getClassName(course['code']), # Class name
-                            book['title']  # Title
-                        ))
-                    break
+    bar = ProgressBar(len(catalog))
+    for isbn in catalog:
+        response = requests.get(solrURL(isbn))
+        data = response.text.split('\n')
+        for book in bookstoreJSON:
+            if book['isbn'] == isbn:
+                for course in book['classes']:
+                    writeFile.write(',%s,"%s",%s,"%s","%s","%s"\n' % (
+                        isbn,   # ISBN
+                        data[1], # Call number
+                        course['prof'], # Professor
+                        course['code'], # Class code
+                        getClassName(course['code']), # Class name
+                        book['title']  # Title
+                    ))
+                break
         bar.progress()
     bar.finish()
