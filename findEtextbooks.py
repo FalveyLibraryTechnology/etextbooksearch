@@ -42,7 +42,7 @@ def getISBNsFromFolder(foldername, prefix=''):
         print ('\nNo %s' % foldername)
         return []
 
-def getMetadata (matchingISBNs, outFileName):
+def getMetadata (matchingISBNs, outFileName, exact=False):
     with open ("%s.csv" % outFileName, "w") as csvfile:
         if len(matchingISBNs) == 0:
             csvfile.write("nothing")
@@ -57,12 +57,13 @@ def getMetadata (matchingISBNs, outFileName):
             else:
                 csvfile.write("%s\n" % str(response.text).strip())
             bar.progress()
-        bar.finish("%3f%%" % (100 * len(matchingISBNs) / len(bookstoreISBNs)))
+        if exact:
+            bar.finish("%.3f%%" % (100 * len(matchingISBNs) / len(bookstoreISBNs)))
+        else:
+            bar.finish("%.3f%%" % (100 * len(matchingISBNs) / len(xCourseISBNs)))
 
 # Expanded ISBNs
 print ('BookstoreFiles/')
-expandedHashFile = expandedHashPath()
-print ('= %s' % expandedHashFile)
 # Bookstore JSON
 bookstoreISBNs = []
 bookstoreJSON = []
@@ -71,6 +72,8 @@ for file in os.listdir(storeFilePath):
         bookstoreJSON.extend(json.load(jsonFile))
 bookstoreISBNs = [x['isbn'] for x in bookstoreJSON]
 
+expandedHashFile = expandedHashPath()
+print ('= %s' % expandedHashFile)
 if not os.path.exists(expandedHashFile):
     xCourseISBNs = expandCourseISBNs(bookstoreJSON, worldcatAI)
 else:
@@ -83,7 +86,9 @@ pubISBNs = getISBNsFromFolder(pubFilePath, prefix='pub')
 catISBNs = getISBNsFromFolder(catFilePath, prefix='cat')
 
 # match the files
-# needToBuy in pubFile but not cat, printBooks in cat but not pubfile, ebookMatches in pubfile and cat
+#   needToBuy in pubFile but not cat
+#   printBooks in cat but not pubfile
+#   ebookMatches in pubfile and cat
 bar = ProgressBar(
     len(xCourseISBNs),
     label='Looking for %s ISBNs in a pool of %s ' % (
@@ -125,8 +130,8 @@ bar.finish()
 
 print ("\nPrinting results...")
 getMetadata (ebookMatches, "have-ebooks")     # have and open access
-getMetadata (exactEbooks, "have-ebooks-exact") # exact class ebookMatches for above
+getMetadata (exactEbooks, "have-ebooks-exact", exact=True) # exact class ebookMatches for above
 getMetadata (printBooks, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
-getMetadata (exactPrint, "have-print-exact") # exact class ebookMatches for above
+getMetadata (exactPrint, "have-print-exact", exact=True) # exact class ebookMatches for above
 getMetadata (needToBuy, "available-ebooks")    # don't have
-print ('no matches: %s (%3d%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
+print ('no matches: %s (%.3f%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
