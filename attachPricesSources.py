@@ -138,6 +138,6 @@ else:
     with open('hashes/prices.txt', "w") as priceFile:
         priceFile.write("%s" % '\n'.join(priceList))
 
-runFileComparison('available-ebooks.csv')
-runFileComparison('have-ebooks.csv')
-runFileComparison('have-print.csv')
+runFileComparison('reports/ebooks-available-for-purchase.csv')
+runFileComparison('reports/have-ebooks.csv')
+runFileComparison('reports/have-print.csv')

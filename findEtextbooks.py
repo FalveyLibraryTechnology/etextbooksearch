@@ -42,7 +42,7 @@ def getISBNsFromFolder(foldername, prefix=''):
         print ('\nNo %s' % foldername)
         return []
 
-def getMetadata (matchingISBNs, outFileName):
+def getMetadata (matchingISBNs, outFileName, exact=False):
     with open ("%s.csv" % outFileName, "w") as csvfile:
         if len(matchingISBNs) == 0:
             csvfile.write("nothing")
@@ -57,12 +57,13 @@ def getMetadata (matchingISBNs, outFileName):
             else:
                 csvfile.write("%s\n" % str(response.text).strip())
             bar.progress()
-        bar.finish()
+        if exact:
+            bar.finish("%.3f%%" % (100 * len(matchingISBNs) / len(bookstoreISBNs)))
+        else:
+            bar.finish("%.3f%%" % (100 * len(matchingISBNs) / len(xCourseISBNs)))
 
 # Expanded ISBNs
 print ('BookstoreFiles/')
-expandedHashFile = expandedHashPath()
-print ('= %s' % expandedHashFile)
 # Bookstore JSON
 bookstoreISBNs = []
 bookstoreJSON = []
@@ -71,6 +72,8 @@ for file in os.listdir(storeFilePath):
         bookstoreJSON.extend(json.load(jsonFile))
 bookstoreISBNs = [x['isbn'] for x in bookstoreJSON]
 
+expandedHashFile = expandedHashPath()
+print ('= %s' % expandedHashFile)
 if not os.path.exists(expandedHashFile):
     xCourseISBNs = expandCourseISBNs(bookstoreJSON, worldcatAI)
 else:
@@ -83,12 +86,9 @@ pubISBNs = getISBNsFromFolder(pubFilePath, prefix='pub')
 catISBNs = getISBNsFromFolder(catFilePath, prefix='cat')
 
 # match the files
-# needToBuy in pubFile but not cat, notDRMfree in cat but not pubfile, matches in pubfile and cat
-matches = []
-notDRMfree = []
-exactPrint = []
-needToBuy = []
-noMatch = 0
+#   needToBuy in pubFile but not cat
+#   printBooks in cat but not pubfile
+#   ebookMatches in pubfile and cat
 bar = ProgressBar(
     len(xCourseISBNs),
     label='Looking for %s ISBNs in a pool of %s ' % (
@@ -97,6 +97,12 @@ bar = ProgressBar(
     )
 )
 
+ebookMatches = []
+exactEbooks = []
+printBooks = []
+exactPrint = []
+needToBuy = []
+noMatch = 0
 catIndex = 0
 pubIndex = 0
 for x in xCourseISBNs:
@@ -108,20 +114,26 @@ for x in xCourseISBNs:
     inCats = catIndex < len(catISBNs) and x == catISBNs[catIndex]
     if pubIndex < len(pubISBNs) and x == pubISBNs[pubIndex]:
         if inCats:
-            matches.append(x)
+            if x in bookstoreISBNs:
+                exactEbooks.append(x)
+            ebookMatches.append(x)
         else:
             needToBuy.append(x)
     elif inCats:
         if x in bookstoreISBNs:
             exactPrint.append(x)
-        notDRMfree.append(x)
-    else:
+        printBooks.append(x)
+    elif x in bookstoreISBNs:
         noMatch = noMatch + 1
 
-bar.finish('no match: %s\n' % comma(noMatch))
+bar.finish()
 
-print ("Printing results...")
-getMetadata (matches, "have-ebooks")     # have and open access
-getMetadata (needToBuy, "available-ebooks")    # don't have
-getMetadata (notDRMfree, "have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
-getMetadata (exactPrint, "have-print-exact") # exact class matches for above
+print ("\nPrinting results...")
+if not os.path.exists("reports/"):
+    os.mkdir("reports/")
+getMetadata (ebookMatches, "reports/have-ebooks")     # have and open access
+getMetadata (exactEbooks, "reports/have-ebooks-exact", exact=True) # exact class ebookMatches for above
+getMetadata (printBooks, "reports/have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
+getMetadata (exactPrint, "reports/have-print-exact", exact=True) # exact class ebookMatches for above
+getMetadata (needToBuy, "reports/ebooks-available-for-purchase")    # don't have
+print ('no matches: %s (%.3f%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
