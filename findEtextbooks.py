@@ -10,7 +10,7 @@ from xlrd import open_workbook  # Excel files
 from src.utils import *
 from src.ProgressBar import ProgressBar
 
-currentPeriod = "2017_fall"
+currentPeriod = "2017_1_fall" # 1 for fall, 0 for spring
 print ("\nCURRENT PERIOD: %s\n" % currentPeriod)
 
 worldcatAI = 'falveylibrary'
