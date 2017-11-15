@@ -133,8 +133,8 @@ def bar_graph(filename, data, title=None, key=None, labels=None, numbers=True):
 def horizontal_graph(filename, data, title=None, key=None, labels=None, numbers=True):
     im = Image.new("RGB", (1, 1), (255, 255, 255))
     draw = ImageDraw.Draw(im)
-    gotham_font = ImageFont.truetype("fonts/opensans-semibold-webfont.ttf", 10)
-    gotham_title = ImageFont.truetype("fonts/opensans-semibold-webfont.ttf", 15)
+    gotham_font = ImageFont.truetype("fonts/Gotham-Medium.ttf", 10)
+    gotham_title = ImageFont.truetype("fonts/Gotham-Black.ttf", 15)
 
     colors = [vu_navy, vu_blue, vu_orange]
     _, line_height = draw.textsize("0,", font=gotham_font)
@@ -144,7 +144,7 @@ def horizontal_graph(filename, data, title=None, key=None, labels=None, numbers=
     bar_border = 1
     padding = 20
     width = 800
-    height = ((bar_width * len(data[0]["sections"]) + bar_gap) * len(data)) - bar_gap + (padding * 2) + 35 # room for keys - padding / 2
+    height = ((bar_width * len(data[0]["sections"]) + bar_gap) * len(data)) - bar_gap + (padding * 2) + 28 # room for keys - padding / 2
 
     im = Image.new("RGB", (width, height), (255, 255, 255))
     draw = ImageDraw.Draw(im)
@@ -185,17 +185,17 @@ def horizontal_graph(filename, data, title=None, key=None, labels=None, numbers=
         for i in range(len(key)):
             # Bar
             draw.rectangle((width - max_w - padding - 19, y, width - padding + 1, y + max_h + 10), fill=(colors[i + 1]))
-            smart_text(draw, key[i], width - max_w - padding - 10, y + 4, gotham_font)
+            smart_text(draw, key[i], width - max_w - padding - 10, y + 5, gotham_font)
             # Totals
             total_text = comma(totals[i])
             total_text += " (%.1f%%)" % (100 * totals[i] / total_totals)
             total_w, _ = draw.textsize(total_text, font=gotham_font)
-            draw.text((width - total_w - max_w - padding - 25, y + 4), total_text, fill=(colors[i + 1]), font=gotham_font)
+            draw.text((width - total_w - max_w - padding - 25, y + 5), total_text, fill=(colors[i + 1]), font=gotham_font)
             y += max_h + 9 + 5
             key_height += max_h + 9 + 5
 
     # BARS
-    bar_y = padding / 2 + key_height # room for keys
+    bar_y = padding + 35 # room for keys
     max = 0
     for bar in data:
         if bar["total"] > max:
@@ -211,10 +211,10 @@ def horizontal_graph(filename, data, title=None, key=None, labels=None, numbers=
         )
         draw.rectangle(box, fill=colors[0])
         if "title" in bar:
-            draw.text((left_pad, bar_y - line_height - 8), bar["title"], fill=(0, 0, 0), spacing=2, font=gotham_title)
+            draw.text((left_pad, bar_y - line_height - 6), bar["title"], fill=(0, 0, 0), spacing=2, font=gotham_bold)
         if numbers:
             tw, _ = draw.textsize(comma(bar["total"]), font=gotham_font)
-            draw.text((left_pad - tw - padding / 2, bar_y - line_height - 1), comma(bar["total"]), fill=colors[0], spacing=2, font=gotham_font)
+            draw.text((left_pad - tw - padding / 2, bar_y - line_height + 1), comma(bar["total"]), fill=colors[0], spacing=2, font=gotham_font)
         # section bars
         index = 0
         for section in bar["sections"]:
@@ -239,9 +239,9 @@ def horizontal_graph(filename, data, title=None, key=None, labels=None, numbers=
                 i = 1
                 for n in section:
                     w, _ = draw.textsize(comma(n), font=gotham_font)
-                    draw.text((left_pad - w - padding / 2, text_y - 1), comma(n), fill=colors[len(colors) - i], spacing=2, font=gotham_font)
+                    draw.text((left_pad - w - padding / 2, text_y + 1), comma(n), fill=colors[len(colors) - i], spacing=2, font=gotham_font)
                     if bar_index == 0 and i == 1:
-                        smart_text(draw, bar["labels"][index], left_pad + 2, text_y, font=gotham_font)
+                        smart_text(draw, bar["labels"][index], left_pad + 2, text_y + 2, font=gotham_font)
                     text_y += line_height
                     i += 1
             bar_y += bar_width
