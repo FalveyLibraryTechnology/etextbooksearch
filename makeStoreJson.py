@@ -46,7 +46,7 @@ for file in os.listdir('VillanovaStoreFiles'):
         for row in range(start_row, sheet.nrows):
             rvalues = sheet.row_values(row)
             # Classes before books
-            if not rvalues[isbn_col]:
+            if rvalues[prof_col]:
                 if len(classes) > 0:
                     for bookObj in books:
                         bookObj["classes"] = classes[:]
