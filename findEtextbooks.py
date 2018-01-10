@@ -10,7 +10,7 @@ from xlrd import open_workbook  # Excel files
 from src.utils import *
 from src.ProgressBar import ProgressBar
 
-currentPeriod = "2017_1_fall" # 1 for fall, 0 for spring
+currentPeriod = "2018_0_spring" # 1 for fall, 0 for spring
 print ("\nCURRENT PERIOD: %s\n" % currentPeriod)
 
 worldcatAI = 'falveylibrary'
@@ -106,7 +106,7 @@ exactEbooks = []
 printBooks = []
 exactPrint = []
 needToBuy = []
-noMatch = 0
+noMatch = []
 catIndex = 0
 pubIndex = 0
 for x in xCourseISBNs:
@@ -128,7 +128,7 @@ for x in xCourseISBNs:
             exactPrint.append(x)
         printBooks.append(x)
     elif x in bookstoreISBNs:
-        noMatch = noMatch + 1
+        noMatch.append(x)
 
 bar.finish()
 
@@ -164,9 +164,10 @@ with open ("hashes/reports/%s.json" % currentPeriod, "w") as hashreport:
 print ("\nPrinting results...")
 if not os.path.exists("reports/"):
     os.mkdir("reports/")
-getMetadata (ebookMatches, "reports/have-ebooks")     # have and open access
+getMetadata (ebookMatches, "reports/have-ebooks")                  # have and open access
 getMetadata (exactEbooks, "reports/have-ebooks-exact", exact=True) # exact class ebookMatches for above
-getMetadata (printBooks, "reports/have-print") # have and not open access: physical books, CASA catalog, restricted ebooks
-getMetadata (exactPrint, "reports/have-print-exact", exact=True) # exact class ebookMatches for above
-getMetadata (needToBuy, "reports/ebooks-available-for-purchase")    # don't have
-print ('no matches: %s (%.3f%%)\n' % (comma(noMatch), 100 * noMatch / len(bookstoreISBNs)))
+getMetadata (printBooks, "reports/have-print")                     # have and not open access: physical books, CASA catalog, restricted ebooks
+getMetadata (exactPrint, "reports/have-print-exact", exact=True)   # exact class ebookMatches for above
+getMetadata (needToBuy, "reports/ebooks-available-for-purchase")   # don't have
+getMetadata (noMatch, "reports/dont-have-no-ebook", exact=True)    # don't have no ebook
+# print ('no matches: %s (%.3f%%)\n' % (comma(len(noMatch)), 100 * len(noMatch) / len(bookstoreISBNs)))
