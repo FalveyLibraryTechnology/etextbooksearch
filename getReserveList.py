@@ -7,59 +7,92 @@ from checksumdir import dirhash # folder md5
 from lxml import html
 from xlrd import open_workbook  # Excel files
 
-from utils import comma, findISBNs, findExcelISBNs, mapHashPath, sortUnique
-from ProgressBar import ProgressBar
+from src.utils import comma, findISBNs, sortUnique
+from src.ProgressBar import ProgressBar
 
 def solrURL(isbn):
     return 'http://hermes.library.villanova.edu:8082/solr/biblio/select?fl=callnumber-raw&wt=csv&q=isbn:"%s"' % isbn
 
+classNameCache = {}
 def getClassName(classCode):
-    parts = classCode.split(' ')
+    parts = classCode.split(" ")
     if len(parts) < 2:
-        return 'n/a'
-    url = 'https://novasis.villanova.edu/pls/bannerprd/bvckctlg.p_display_courses?term_in=201820&one_subj=%s&sel_subj=&sel_crse_strt=%s&sel_crse_end=%s&sel_levl=&sel_schd=&sel_coll=&sel_divs=&sel_dept=&sel_attr=' % (parts[0], parts[1], parts[1])
+        print ("INVALID CLASSCODE: %s" % classCode)
+        return classCode
+    codeHash = "%s%s" % (parts[0], parts[1])
+    if codeHash in classNameCache:
+        return classNameCache[codeHash]
+    if len(parts) < 2:
+        return "n/a"
+    url = "https://novasis.villanova.edu/pls/bannerprd/bwckctlg.p_disp_course_detail?cat_term_in=201830&subj_code_in=%s&crse_numb_in=%s" % (parts[0], parts[1])
     response = requests.get(url)
     tree = html.fromstring(response.content)
-    titleEl = tree.xpath('//td[@class="nttitle"][2]')[0]
-    return titleEl.text
-
-# Load exploded print books we have
-catalog = []
-if not os.path.exists("reports/have-print-exact.csv"):
-    print ("Run findEtextbooks.py first.")
-    exit (0)
-else:
-    with open('reports/have-print-exact.csv', newline='') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            catalog.append(row[0]) # isbn
-    catalog = sortUnique(catalog)
-    print ('= Loaded catalog ISBNs from file (%s)' % comma(len(catalog)))
+    try:
+        titleEl = tree.xpath('//td[@class="nttitle"]')[0]
+        title = titleEl.text.split(" - ", maxsplit=1)[1]
+        # print (title)
+        classNameCache[codeHash] = title
+    except:
+        print ("MISSING CLASS TITLE: %s" % classCode)
+        print (url)
+        return classCode
+    return title
 
 # Bookstore JSON
+print ("= Loading book data from BookstoreFiles/"
 bookstoreJSON = []
 for file in os.listdir("BookstoreFiles"):
-    with open(os.path.join("BookstoreFiles", file), 'r') as jsonFile:
+    with open(os.path.join("BookstoreFiles", file), "r") as jsonFile:
         bookstoreJSON.extend(json.load(jsonFile))
 
-print ('\nComparing %s books to a catalog of %s...' % (comma(len(bookstore)), comma(len(catalog))))
+# Load exploded print books we have
+exactPrint = []
+if not os.path.exists("reports/have-print-exact.csv"):
+    if not os.path.exists("CatalogFiles"):
+        print ("x Load ISBNs into CatalogFiles/ to generate this report.")
+        exit (0)
+    print ("= Using CatalogFiles and bookstoreJSON to make have-print-exact.")
+    catalogISBNs = []
+    for file in os.listdir("CatalogFiles"):
+        catalogISBNs.extend(findISBNs(file, "CatalogFiles"))
+    bookstoreISBNs = [x["isbn"] for x in bookstoreJSON]
+    bar = ProgressBar(len(bookstoreISBNs))
+    for isbn in bookstoreISBNs:
+        if isbn in catalogISBNs:
+            exactPrint.append(isbn)
+        bar.progress()
+    with open("reports/have-print-exact.csv", "w") as outfile:
+        outfile.write("\n".join(exactPrint))
+    bar.finish()
+else:
+    with open("reports/have-print-exact.csv", newline="") as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            exactPrint.append(row[0]) # isbn
+    exactPrint = sortUnique(exactPrint)
+    print ("= Loaded exactPrint ISBNs from file (%s)" % comma(len(exactPrint)))
+
+print ("\nFinding %s exact print matches in %s items of bookstore class data..." % (comma(len(exactPrint)), comma(len(bookstoreJSON))))
 cindex = 0
-with open('reserve-list.csv', 'w') as writeFile:
-    writeFile.write('notes,isbn,call number,professor,class,class name,title\n')
-    bar = ProgressBar(len(catalog))
-    for isbn in catalog:
+with open("reserve-list.csv", "w") as writeFile:
+    writeFile.write("notes,isbn,call number,title,professor,class,class name\n")
+    bar = ProgressBar(len(exactPrint))
+    for isbn in exactPrint:
         response = requests.get(solrURL(isbn))
-        data = response.text.split('\n')
+        data = response.text.split("\n")
+        if not data[1]:
+            print ("No callnumber for %s" % isbn)
+            continue
         for book in bookstoreJSON:
-            if book['isbn'] == isbn:
-                for course in book['classes']:
-                    writeFile.write(',%s,"%s",%s,"%s","%s","%s"\n' % (
+            if book["isbn"] == isbn:
+                for course in book["classes"]:
+                    writeFile.write(',%s,"%s","%s",%s,"%s","%s"\n' % (
                         isbn,   # ISBN
                         data[1], # Call number
-                        course['prof'], # Professor
-                        course['code'], # Class code
-                        getClassName(course['code']), # Class name
-                        book['title']  # Title
+                        book["title"],  # Title
+                        course["prof"], # Professor
+                        course["code"], # Class code
+                        getClassName(course["code"]), # Class name
                     ))
                 break
         bar.progress()
