@@ -109,26 +109,26 @@ needToBuy = []
 noMatch = []
 catIndex = 0
 pubIndex = 0
-for x in xCourseISBNs:
+for isbn in xCourseISBNs:
     bar.progress()
-    while catIndex < len(catISBNs) and x > catISBNs[catIndex]:
+    while catIndex < len(catISBNs) and isbn > catISBNs[catIndex]:
         catIndex += 1
-    while pubIndex < len(pubISBNs) and x > pubISBNs[pubIndex]:
+    while pubIndex < len(pubISBNs) and isbn > pubISBNs[pubIndex]:
         pubIndex += 1
-    inCats = catIndex < len(catISBNs) and x == catISBNs[catIndex]
-    if pubIndex < len(pubISBNs) and x == pubISBNs[pubIndex]:
+    inCats = catIndex < len(catISBNs) and isbn == catISBNs[catIndex]
+    if pubIndex < len(pubISBNs) and isbn == pubISBNs[pubIndex]:
         if inCats:
-            if x in bookstoreISBNs:
-                exactEbooks.append(x)
-            ebookMatches.append(x)
-        else:
-            needToBuy.append(x)
+            if isbn in bookstoreISBNs:
+                exactEbooks.append(isbn)
+            ebookMatches.append(isbn)
+        elif isbn in bookstoreISBNs:
+            needToBuy.append(isbn)
     elif inCats:
-        if x in bookstoreISBNs:
-            exactPrint.append(x)
-        printBooks.append(x)
-    elif x in bookstoreISBNs:
-        noMatch.append(x)
+        if isbn in bookstoreISBNs:
+            exactPrint.append(isbn)
+        printBooks.append(isbn)
+    elif isbn in bookstoreISBNs:
+        noMatch.append(isbn)
 
 bar.finish()
 
@@ -168,6 +168,6 @@ getMetadata (ebookMatches, "reports/have-ebooks")                  # have and op
 getMetadata (exactEbooks, "reports/have-ebooks-exact", exact=True) # exact class ebookMatches for above
 getMetadata (printBooks, "reports/have-print")                     # have and not open access: physical books, CASA catalog, restricted ebooks
 getMetadata (exactPrint, "reports/have-print-exact", exact=True)   # exact class ebookMatches for above
-getMetadata (needToBuy, "reports/ebooks-available-for-purchase")   # don't have
+getMetadata (needToBuy, "reports/ebooks-available-for-purchase", exact=True) # don't have
 getMetadata (noMatch, "reports/dont-have-no-ebook", exact=True)    # don't have no ebook
 # print ('no matches: %s (%.3f%%)\n' % (comma(len(noMatch)), 100 * len(noMatch) / len(bookstoreISBNs)))
