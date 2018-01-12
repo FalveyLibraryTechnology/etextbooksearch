@@ -39,7 +39,7 @@ def getClassName(classCode):
     return title
 
 # Bookstore JSON
-print ("= Loading book data from BookstoreFiles/"
+print ("= Loading book data from BookstoreFiles/")
 bookstoreJSON = []
 for file in os.listdir("BookstoreFiles"):
     with open(os.path.join("BookstoreFiles", file), "r") as jsonFile:
