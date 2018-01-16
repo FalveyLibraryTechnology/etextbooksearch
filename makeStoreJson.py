@@ -5,13 +5,6 @@ from xlrd import open_workbook  # Excel files
 
 from ProgressBar import ProgressBar
 
-author_col = 0
-title_col = 1
-isbn_col = 6
-
-code_col = 0
-prof_col = 2
-
 def comma(num):
     return '{:,}'.format(num)
 
@@ -22,6 +15,16 @@ def newBookObj(row):
         'isbn': row[isbn_col].strip(),
         'classes': []
     }
+
+
+author_col = 0
+title_col = 2
+isbn_col = 8 # 6
+
+code_col = 0
+prof_col = 3 # 2
+
+is_book_col = title_col
 
 for file in os.listdir('VillanovaStoreFiles'):
     print ('opening %s' % file)
@@ -40,12 +43,13 @@ for file in os.listdir('VillanovaStoreFiles'):
         bar = ProgressBar(rowTotal, label='parsing %s rows' % comma(rowTotal))
         #for s in range(book.nsheets):
         sheet = book.sheet_by_index(0)
-        start_row = 7
         books = []
         classes = []
-        for row in range(start_row, sheet.nrows):
+        for row in range(8, sheet.nrows): # start row
             rvalues = sheet.row_values(row)
-            # Classes before books
+
+            '''
+            # By Course
             if rvalues[prof_col]:
                 if len(classes) > 0:
                     for bookObj in books:
@@ -61,23 +65,19 @@ for file in os.listdir('VillanovaStoreFiles'):
                 books.append(newBookObj(rvalues))
 
             '''
-            # Books before classes
-            risbns = []
-            risbns.extend([isbnPattern1.findall(str(cell))[0] for cell in rvalues if isbnPattern1.search(str(cell))])
-            risbns.extend([isbnPattern2.findall(str(cell))[0] for cell in rvalues if isbnPattern2.search(str(cell))])
-            risbns.extend([isbnPattern3.findall(str(cell))[0] for cell in rvalues if isbnPattern3.search(str(cell))])
-            risbns.extend([isbnPattern4.findall(str(cell))[0] for cell in rvalues if isbnPattern4.search(str(cell))])
-            if len(risbns) > 0:
+
+            # By Author
+            if rvalues[is_book_col]:
                 if bookObj:
                     # print (bookObj)
                     classList.append(bookObj)
                 bookObj = newBookObj(rvalues)
-            elif not rvalues[title_col] and bookObj:
+            elif not rvalues[is_book_col] and bookObj:
                 bookObj['classes'].append({
                     'code': rvalues[code_col].strip(),
                     'prof': rvalues[prof_col]
                 })
-            '''
+
             bar.progress()
         bar.finish()
 
