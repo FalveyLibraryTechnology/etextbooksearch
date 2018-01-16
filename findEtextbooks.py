@@ -46,20 +46,54 @@ def getISBNsFromFolder(foldername, prefix=''):
         print ('\nNo %s' % foldername)
         return []
 
-def getMetadata (matchingISBNs, outFileName, exact=False):
+def getCallnumber(isbn):
+    response = requests.get('http://hermes.library.villanova.edu:8082/solr/biblio/select?fl=callnumber-raw&wt=csv&q=isbn:"%s"' % isbn)
+    data = response.text.split("\n")
+    if not data[1]:
+        return "N/A"
+    return data[1] # Call number
+
+def getMetadata (matchingISBNs, outFileName, exact=False, addClasses=True, addCallnumber=False, addFull=False):
+    global bookstoreISBNs, bookstoreJSON, isbn_class_map
+
     with open ("%s.csv" % outFileName, "w") as csvfile:
         if len(matchingISBNs) == 0:
             csvfile.write("nothing")
             return
+        if addCallnumber:
+            csvfile.write("CALL NUMBER,")
         fields = 'isbn,year,ed,title,author,lang,url,publisher,form,city'
+        csvfile.write(fields.upper())
+        if addClasses:
+            csvfile.write(",CLASS CODE,ATTENDEES,PROFESSOR NAME")
+            if addFull:
+                csvfile.write(",PROF FULL NAME,PROF EMAIL")
+            csvfile.write(",...")
+        csvfile.write("\n")
         bar = ProgressBar(len(matchingISBNs), label='%s: %u ' % (outFileName, len(matchingISBNs)))
         for isbn in matchingISBNs:
             urlz = 'http://xisbn.worldcat.org/webservices/xid/isbn/'+isbn+'?method=getMetadata&fl='+fields+'&format=csv&ai='+worldcatAI
             response = requests.get(urlz)
+            row = response.text.strip()
             if not str(response.text)[:1] == '9':
-                csvfile.write("%s\n" % isbn)
-            else:
-                csvfile.write("%s\n" % str(response.text).strip())
+                if not isbn in bookstoreISBNs:
+                    row = "%s,,,,,,,,," % isbn
+                else:
+                    for book in bookstoreJSON:
+                        if book["isbn"] == isbn:
+                            row = '%s,,,"%s",,,,,,' % (isbn, book["title"])
+                            break
+            if addClasses:
+                if addFull:
+                    if isbn in full_name_map:
+                        row += full_name_map[isbn]
+                    elif isbn in isbn_class_map:
+                        row += isbn_class_map[isbn]
+                elif isbn in isbn_class_map:
+                    row += isbn_class_map[isbn]
+            if addCallnumber:
+                csvfile.write('"%s",' % getCallnumber(isbn))
+            csvfile.write("%s\n" % str(row).strip())
             bar.progress()
         if exact:
             bar.finish("%.3f%%" % (100 * len(matchingISBNs) / len(bookstoreISBNs)))
@@ -89,6 +123,10 @@ pubISBNs = getISBNsFromFolder(pubFilePath, prefix='pub')
 
 catISBNs = getISBNsFromFolder(catFilePath, prefix='cat')
 
+print ("\n= Load class data...\n")
+isbn_class_map = json.load(open("booklist/%s-isbn-map.json" % currentPeriod, "r"))
+full_name_map = json.load(open("booklist/%s-full-name-map.json" % currentPeriod, "r"))
+
 # match the files
 #   needToBuy in pubFile but not cat
 #   printBooks in cat but not pubfile
@@ -100,6 +138,7 @@ bar = ProgressBar(
         comma(len(pubISBNs) + len(catISBNs))
     )
 )
+
 
 ebookMatches = []
 exactEbooks = []
@@ -115,23 +154,27 @@ for isbn in xCourseISBNs:
         catIndex += 1
     while pubIndex < len(pubISBNs) and isbn > pubISBNs[pubIndex]:
         pubIndex += 1
-    inCats = catIndex < len(catISBNs) and isbn == catISBNs[catIndex]
+    inCatalog = catIndex < len(catISBNs) and isbn == catISBNs[catIndex]
+    inBookstoreList = isbn in bookstoreISBNs
     if pubIndex < len(pubISBNs) and isbn == pubISBNs[pubIndex]:
-        if inCats:
-            if isbn in bookstoreISBNs:
+        if inCatalog:
+            if inBookstoreList:
                 exactEbooks.append(isbn)
             ebookMatches.append(isbn)
-        elif isbn in bookstoreISBNs:
+        elif inBookstoreList:
             needToBuy.append(isbn)
-    elif inCats:
-        if isbn in bookstoreISBNs:
+    elif inCatalog:
+        if inBookstoreList:
             exactPrint.append(isbn)
         printBooks.append(isbn)
-    elif isbn in bookstoreISBNs:
+    elif inBookstoreList:
         noMatch.append(isbn)
 
 bar.finish()
-
+'''
+for isbn in needToBuy:
+    print (isbn, isbn in isbn_class_map)
+'''
 print ("\nSaving Report for posterity...")
 if not os.path.exists("hashes/reports/"):
     os.mkdir("hashes/reports/")
@@ -164,10 +207,11 @@ with open ("hashes/reports/%s.json" % currentPeriod, "w") as hashreport:
 print ("\nPrinting results...")
 if not os.path.exists("reports/"):
     os.mkdir("reports/")
-getMetadata (ebookMatches, "reports/have-ebooks")                  # have and open access
-getMetadata (exactEbooks, "reports/have-ebooks-exact", exact=True) # exact class ebookMatches for above
-getMetadata (printBooks, "reports/have-print")                     # have and not open access: physical books, CASA catalog, restricted ebooks
-getMetadata (exactPrint, "reports/have-print-exact", exact=True)   # exact class ebookMatches for above
+getMetadata (ebookMatches, "reports/have-ebooks", addFull=True)                  # have and open access
+getMetadata (exactEbooks, "reports/have-ebooks-exact", exact=True, addFull=True) # exact class ebookMatches for above
+getMetadata (printBooks, "reports/have-print", addCallnumber=True)                     # have and not open access: physical books, CASA catalog, restricted ebooks
+getMetadata (exactPrint, "reports/have-print-exact", exact=True, addCallnumber=True)   # exact class ebookMatches for above
 getMetadata (needToBuy, "reports/ebooks-available-for-purchase", exact=True) # don't have
 getMetadata (noMatch, "reports/dont-have-no-ebook", exact=True)    # don't have no ebook
+getMetadata (bookstoreISBNs, "reports/bookstore-list-reformatted", exact=True)    # don't have no ebook
 # print ('no matches: %s (%.3f%%)\n' % (comma(len(noMatch)), 100 * len(noMatch) / len(bookstoreISBNs)))
