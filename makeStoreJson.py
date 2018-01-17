@@ -8,34 +8,42 @@ from ProgressBar import ProgressBar
 def comma(num):
     return '{:,}'.format(num)
 
-# TODO: ADD PRICES
-def newBookObj(row):
-    return {
-        'title': row[title_col].strip(),
-        'isbn': row[isbn_col].strip(),
-        'classes': []
-    }
-
-
 author_col = 0
 title_col = 2
 isbn_col = 8 # 6
+buy_new_col = 12
+buy_used_col = 13
+rent_new_col = 14
+rent_used_col = 15
 
 code_col = 0
 prof_col = 3 # 2
 
 is_book_col = title_col
 
+# TODO: ADD PRICES
+def newBookObj(row):
+    prices = {}
+    if row[buy_new_col]:
+        prices["buy_new"] = row[buy_new_col]
+    if row[buy_used_col]:
+        prices["buy_used"] = row[buy_used_col]
+    if row[rent_new_col]:
+        prices["rent_new"] = row[rent_new_col]
+    if row[rent_used_col]:
+        prices["rent_used"] = row[rent_used_col]
+    return {
+        'title': row[title_col].strip(),
+        'isbn': row[isbn_col].strip(),
+        'prices': prices,
+        'classes': []
+    }
+
 for file in os.listdir('VillanovaStoreFiles'):
     print ('opening %s' % file)
     with open_workbook(os.path.join('VillanovaStoreFiles', file)) as book:
         classList = []
         bookObj = {}
-
-        isbnPattern1 = re.compile(r'978(?:-?\d){10}')
-        isbnPattern2 = re.compile(r'[A-Za-z]((?:-?\d){10})\D')
-        isbnPattern3 = re.compile(r'[A-zA-Z]((?:-?\d){9}X)')
-        isbnPattern4 = re.compile(r'a(\d{10})\D')
 
         rowTotal = 0
         #for s in range(book.nsheets):
