@@ -16,15 +16,22 @@ full_name_map = {}
 for book in bookstoreJSON:
     isbn_map[book["isbn"]] = ""
     full_name_map[book["isbn"]] = ""
+    sum = 0
     for c in book["classes"]:
         parts = c["code"].split(" ")
         code = "%s %s - %s" % (parts[0], parts[1], parts[2])
-        print (code)
+        found = False
         for course in source:
             if code == course["code"]:
+                found = True
                 isbn_map[book["isbn"]] += ',"%s",%d,"%s"' % (c["code"], course["students"], c["prof"])
-                full_name_map[book["isbn"]] += ',"%s",%d,"%s","%s","%s"' % (c["code"], course["students"], c["prof"], course["prof_name"], course["prof_email"])
+                full_name_map[book["isbn"]] += ',"%s",%d,"%s","%s"' % (c["code"], course["students"], course["prof_name"], course["prof_email"])
+                sum += course["students"]
                 break
+        if not found:
+            print (code)
+    # sum of students, code, enrollment, full name, email
+    full_name_map[book["isbn"]] = ",%d%s" % (sum, full_name_map[book["isbn"]])
 
 json.dump(isbn_map, open("%s-isbn-map.json" % term, "w"), indent=4)
 json.dump(full_name_map, open("%s-full-name-map.json" % term, "w"), indent=4)
